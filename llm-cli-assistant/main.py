@@ -1,103 +1,27 @@
 from dotenv import load_dotenv
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-from langchain_groq import ChatGroq
+load_dotenv()
+
+from langchain_core.messages import SystemMessage
 from rich.console import Console
 from rich.panel import Panel
-from rich.markdown import Markdown
-from rich.console import Group
 
+from core.config import  SYSTEM_PROMPT
+from core.chat import  chat
+from core.commands import show_help, show_history, clear_history
 
-load_dotenv()
 console = Console()
-
-llm = ChatGroq(
-    model="qwen/qwen3.6-27b",
-    reasoning_format="hidden",
-    temperature=0.7,
-)
 
 messages = [
     SystemMessage(
         content=(
-            "You are a helpful developer assistant."
-            "Explain technical concepts clearly and concisely."
-            "Always answer/responsed in markdown formate/syntax "
-            "keep conversation short and simple"
+            SYSTEM_PROMPT
         )
     )
 ]
 
-def show_help():
-    console.print(
-        """
-[bold]Available Commands[/bold]
-
-/help      Show available commands
-/history   Show conversation history
-/clear     Clear conversation history
-/exit      Exit the assistant
-"""
-    )
-
-def show_history():
-    if len(messages) == 1:
-        console.print("[yellow]No conversation history yet.[/yellow]")
-        return
-    console.print("\n[bold]Conversation History[/bold]\n")
-    for message in messages[1:]:
-        if isinstance(message,HumanMessage):
-            content = Group(
-                "[cyan]You:[/cyan]",
-                Markdown(message.content)
-            )
-            console.print(content)
-        elif isinstance(message, AIMessage):
-            content = Group(
-                "[green]AI:[/green]",
-                Markdown(message.content)
-            )
-            console.print(content)
-
-
-def clear_history():
-    global messages
-
-    messages = [
-        SystemMessage(
-            content=(
-                "You are a helpful developer assistant. "
-                "Explain technical concepts clearly and concisely."
-            )
-        )
-    ]
-
-    console.print("[green]Conversation cleared.[/green]")
-
-def chat(user_input):
-    messages.append(HumanMessage(content=user_input))
-
-    console.print("\n[bold green]AI:[/bold green] ", end="")
-
-    full_response = ""
-
-    try:
-        for chunk in llm.stream(messages):
-            if chunk.content:
-                console.print(chunk.content, end="", markup=False)
-                full_response += chunk.content
-        
-
-        console.print("\n")
-        messages.append(
-            AIMessage(content=full_response)
-        )
-    except Exception as e:
-        console.print(f"\n[red]Error:[/red] {e}")
-    
-            # Remove failed user message
-        messages.pop()
-
 def main():
+    global messages
+    
     console.print(
         Panel.fit(
             "[bold cyan]Developer CLI Assistant[/bold cyan]\n"
@@ -120,13 +44,13 @@ def main():
                 show_help()
 
             elif user_input == "/history":
-                show_history()
+                show_history(messages)
 
             elif user_input == "/clear":
-                clear_history()
+                messages = clear_history()
 
             else:
-                chat(user_input)
+                chat(user_input,messages)
 
         except KeyboardInterrupt:
             console.print("\n[yellow]Goodbye![/yellow]")
