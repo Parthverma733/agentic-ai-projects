@@ -15,6 +15,9 @@ def show_help():
 /history   Show conversation history
 /clear     Clear conversation history
 /exit      Exit the assistant
+/sessions  Show saved sessions
+/load <id>  Load a saved session
+/new       Start a new session
 """
     )
 

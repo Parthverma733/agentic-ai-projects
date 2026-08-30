@@ -3,11 +3,12 @@ from rich.console import Console
 from rich.markdown import Markdown
 
 from core.llm import llm
+from core.session import save_session
 
 console = Console()
 
 
-def chat(user_input,messages):
+def chat(user_input, messages, session):
     messages.append(HumanMessage(content=user_input))
 
     console.print("\n[bold green]AI:[/bold green] ", end="")
@@ -26,6 +27,7 @@ def chat(user_input,messages):
         messages.append(
             AIMessage(content=full_response)
         )
+        save_session(session, messages)
     except Exception as e:
         error = str(e).lower()
         if "api key" in error or "authentication" in error:
