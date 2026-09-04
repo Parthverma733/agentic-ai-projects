@@ -1,135 +1,86 @@
-import os
-
 from dotenv import load_dotenv
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-from langchain_groq import ChatGroq
-from rich.console import Console
-from rich.panel import Panel
-from rich.markdown import Markdown
-
 load_dotenv()
 
-console = Console()
-
-llm = ChatGroq(
-    model="llama-3.3-70b-versatile",
-    temperature=0.7,
-)
-
-messages = [
-    SystemMessage(
-        content=(
-            "You are a helpful developer assistant. "
-            "Explain technical concepts clearly and concisely."
-        )
-    )
-]
+from langchain_core.tools import tool
+from langchain_core.messages import HumanMessage
+from core.llm import llm
 
 
-def show_help():
-    console.print(
-        """
-[bold]Available Commands[/bold]
+@tool
+def list_files(path: str = ".") -> str:
+    """List files and folders inside the given project directory."""
 
-/help      Show available commands
-/history   Show conversation history
-/clear     Clear conversation history
-/exit      Exit the assistant
-"""
-    )
+    return "this is a dummy response to the tool call and for testing purpose only"
 
+@tool
+def read_file(path: str) -> str:
+    """Read and return the contents of a text file."""
 
-def show_history():
-    if len(messages) == 1:
-        console.print("[yellow]No conversation history yet.[/yellow]")
-        return
+    return "reading..."
 
-    console.print("\n[bold]Conversation History[/bold]\n")
+@tool
+def search_code(query: str, path: str = ".") -> str:
+    """Search the project for code containing the given text."""
 
-    for message in messages[1:]:
-        if isinstance(message, HumanMessage):
-            console.print(f"[cyan]You:[/cyan] {message.content}")
+    return "searching..."
 
-        elif isinstance(message, AIMessage):
-            console.print(f"[green]AI:[/green] {message.content}")
+@tool
+def project_tree(path: str = ".", depth: int = 2) -> str:
+    """Show the directory structure up to the given depth."""
+
+    return "tree..."
 
 
-def clear_history():
-    global messages
-
-    messages = [
-        SystemMessage(
-            content=(
-                "You are a helpful developer assistant. "
-                "Explain technical concepts clearly and concisely."
-            )
-        )
-    ]
-
-    console.print("[green]Conversation cleared.[/green]")
 
 
-def chat(user_input):
-    messages.append(HumanMessage(content=user_input))
-
-    console.print("\n[bold green]AI:[/bold green] ", end="")
-
-    full_response = ""
-
-    try:
-        for chunk in llm.stream(messages):
-            if chunk.content:
-                console.print(chunk.content, end="")
-                full_response += chunk.content
-
-        console.print("\n")
-
-        messages.append(
-            AIMessage(content=full_response)
-        )
-
-    except Exception as e:
-        console.print(f"\n[red]Error:[/red] {e}")
-
-        # Remove failed user message
-        messages.pop()
+# tool binding
 
 
-def main():
-    console.print(
-        Panel.fit(
-            "[bold cyan]Developer CLI Assistant[/bold cyan]\n"
-            "Type /help to see commands."
-        )
-    )
 
-    while True:
-        try:
-            user_input = console.input("\n[bold cyan]> [/bold cyan]").strip()
+tools = [list_files,read_file,search_code,project_tree]
 
-            if not user_input:
-                continue
+llm_with_tools = llm.bind_tools(tools)
 
-            if user_input == "/exit":
-                console.print("[yellow]Goodbye![/yellow]")
-                break
+query = HumanMessage("list files in core directory and then show the project tree")
 
-            elif user_input == "/help":
-                show_help()
+messages = [ query ]
 
-            elif user_input == "/history":
-                show_history()
+result = llm_with_tools.invoke(messages)
+messages.append(result)
 
-            elif user_input == "/clear":
-                clear_history()
+# from pprint import pprint
 
-            else:
-                chat(user_input)
+# pprint(result.model_dump())
 
-        except KeyboardInterrupt:
-            console.print("\n[yellow]Goodbye![/yellow]")
-            break
+# print("\nTool Calls:\n")
 
 
-if __name__ == "__main__":
-    main()
+# tool executer:
+
+for tool_call in result.tool_calls:
+    # print(f"Tool Name: {tool_call['name']}")
+    # print(f"Arguments: {tool_call['args']}")
+    # print(f"Tool Call ID: {tool_call['id']}")
+    # print("-" * 40)
+
+    if tool_call['name'] == "list_files":
+        tool_message = list_files.invoke(tool_call["args"])
+        print(tool_message)
+        print("-" * 40)
+
+        messages.append(tool_message)
+
+    elif tool_call['name'] == "read_file":
+        messages.append(read_file.invoke(tool_call["args"]))
+    elif tool_call['name'] == "search_code":
+        messages.append(search_code.invoke(tool_call["args"]))
+    elif tool_call['name'] == "project_tree":
+        messages.append(project_tree.invoke(tool_call["args"]))
+
+
+
+result = llm_with_tools.invoke(messages)
+
+from pprint import pprint
+
+pprint(result.model_dump())

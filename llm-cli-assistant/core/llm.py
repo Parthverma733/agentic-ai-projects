@@ -7,4 +7,5 @@ llm = ChatGroq(
     model=MODEL_NAME,
     reasoning_format="hidden",
     temperature=0.7,
+    max_tokens=500
 )
