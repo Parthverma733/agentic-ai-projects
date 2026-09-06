@@ -1,8 +1,8 @@
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage
 from rich.console import Console
 from rich.markdown import Markdown
 
-from core.llm import llm
+from core.agent.agent import run_agent
 from core.session import save_session
 
 console = Console()
@@ -16,19 +16,19 @@ def chat(user_input, messages, session):
     full_response = ""
 
     try:
-        for chunk in llm.stream(messages):
-            if chunk.content:
-                # console.print(chunk.content, end="", markup=False)
-                full_response += chunk.content
+        with console.status("[bold cyan]AI is thinking...[/bold cyan]", spinner="dots"):
+            result = run_agent(messages)
+
+        full_response = result.content
+        console.print("\n[bold green]AI:[/bold green] ", end="")
+
         console.print(Markdown(full_response))
         
 
         console.print("\n")
-        messages.append(
-            AIMessage(content=full_response)
-        )
         save_session(session, messages)
     except Exception as e:
+        print("ERROR:", repr(e))
         error = str(e).lower()
         if "api key" in error or "authentication" in error:
             console.print("[red]Invalid Groq API key.[/red]")
