@@ -2,6 +2,7 @@ from core.tools.filesReadOnly_Tools import list_files, read_file, search_code, p
 from core.agent.tool_executor import executeTool
 
 from core.llm import llm
+from core.agent.context_manager import get_context
 
 tools = [list_files,read_file,search_code,project_tree]
 llm_with_tools = llm.bind_tools(tools)
@@ -9,7 +10,8 @@ llm_with_tools = llm.bind_tools(tools)
 def run_agent(messages):
 
     while True:
-        result = llm_with_tools.invoke(messages)
+        context_messages = get_context(messages)
+        result = llm_with_tools.invoke(context_messages)
 
         messages.append(result)
 
