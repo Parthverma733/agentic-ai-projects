@@ -1,10 +1,24 @@
-from core.tools.filesReadOnly_Tools import list_files, read_file, search_code, project_tree
+from core.tools.filesReadOnly_Tools import (
+    list_files,
+    read_file,
+    search_code,
+    project_tree,
+    find_file,
+    file_info,
+)
 from core.agent.tool_executor import executeTool
 
 from core.llm import llm
 from core.agent.context_manager import get_context
 
-tools = [list_files,read_file,search_code,project_tree]
+tools = [
+    list_files,
+    read_file,
+    search_code,
+    project_tree,
+    find_file,
+    file_info,
+]
 llm_with_tools = llm.bind_tools(tools)
 
 def run_agent(messages):

@@ -1,14 +1,30 @@
 from langchain_core.tools import tool
+from datetime import datetime
 
 import os
 
+IGNORED_DIRS = {
+    ".git",
+    ".env",
+    ".venv",
+    "__pycache__",
+    "node_modules",
+}
 
 @tool
 def list_files(path: str = ".") -> str:
     # docstring
 
     """
-    List the files and directories directly inside a project directory.
+    List the immediate contents of a directory.
+
+    Use this tool when you need to inspect what files and directories
+    exist directly inside a specific directory.
+
+    This tool is for directory inspection, not recursive file searching.
+    Use find_file when you know the exact filename but do not know where
+    it is located.
+
 
     Use this tool when you need to:
     - inspect the contents of a directory
@@ -31,7 +47,10 @@ def list_files(path: str = ".") -> str:
         return f"Error: '{path}' is not a directory."
 
     try:
-        items = os.listdir(path)
+        items = [
+            item for item in os.listdir(path)
+            if item not in IGNORED_DIRS
+        ]
 
         if not items:
             return f"The directory '{path}' is empty."
@@ -84,12 +103,6 @@ def read_file(path: str) -> str:
         return f"Error reading file: {str(e)}"
     
     
-IGNORED_DIRS = {
-    ".git",
-    ".venv",
-    "__pycache__",
-    "node_modules",
-}
 
 @tool
 def search_code(
@@ -98,7 +111,7 @@ def search_code(
     ignore_dirs: list[str] | None = None
 ) -> str:
 
-    # docstring
+    #   
     
     """
     Search project source and text files for a case-insensitive text match.
@@ -256,6 +269,109 @@ def project_tree(path: str = ".", depth: int = 2) -> str:
 
     return "\n".join(tree)
 
+@tool
+def find_file(filename: str, path: str = ".") -> str:
+    """
+    Find files by exact filename within a project directory.
+
+    Use this tool when you know the exact name of a file but do not know
+    where it is located in the project.
+
+    The search recursively checks subdirectories while skipping protected,
+    dependency, and generated directories.
+
+    This tool searches for files only and does not return directories.
+
+    Args:
+        filename: Exact filename to search for, including its extension
+            when applicable.
+        path: Directory from which the recursive search should begin.
+
+    Returns:
+        Matching file paths, or a message if no matching file is found.
+    """
+
+    if not filename:
+        return "Error: Filename cannot be empty."
+
+    if not os.path.exists(path):
+        return f"Error: Path '{path}' does not exist."
+
+    if not os.path.isdir(path):
+        return f"Error: Path '{path}' is not a directory."
+
+    results = []
+
+    for root, dirs, files in os.walk(path):
+
+        dirs[:] = [
+            directory
+            for directory in dirs
+            if directory not in IGNORED_DIRS
+        ]
+
+        for file in files:
+            if file == filename:
+                results.append(os.path.join(root, file))
+
+                if len(results) >= 50:
+                    return "\n".join(results)
+
+    if not results:
+        return f"No file named '{filename}' found."
+
+    return "\n".join(results)
 
 
+@tool
+def file_info(path: str) -> str:
+    """
+    Get metadata about a specific file without reading its contents.
 
+    Use this tool when you need to inspect a file's properties, such as
+    its name, path, type, size, or last modification time.
+
+    The path must point to an existing file, not a directory.
+
+    Args:
+        path: Path to the file whose metadata should be inspected.
+
+    Returns:
+        A formatted summary containing the file name, path, type, size,
+        and last modification time. Returns an error message if the path
+        does not exist, is not a file, or cannot be accessed.
+    """
+
+    if not os.path.exists(path):
+        return f"Error: File '{path}' does not exist."
+
+    if not os.path.isfile(path):
+        return f"Error: '{path}' is not a file."
+
+    try:
+        file_name = os.path.basename(path)
+        file_size = os.path.getsize(path)
+        modified_time = datetime.fromtimestamp(
+            os.path.getmtime(path)
+        ).strftime("%Y-%m-%d %H:%M:%S")
+
+        file_extension = os.path.splitext(file_name)[1]
+
+        if file_extension:
+            file_type = f"{file_extension[1:].upper()} file"
+        else:
+            file_type = "Unknown file type"
+
+        return (
+            f"Name: {file_name}\n"
+            f"Path: {path}\n"
+            f"Type: {file_type}\n"
+            f"Size: {file_size} bytes\n"
+            f"Last modified: {modified_time}"
+        )
+
+    except PermissionError:
+        return f"Error: Permission denied for '{path}'."
+
+    except Exception as e:
+        return f"Error getting file information: {str(e)}"
