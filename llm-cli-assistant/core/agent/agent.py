@@ -6,6 +6,7 @@ from core.tools.filesReadOnly_Tools import (
     find_file,
     file_info,
 )
+from core.tools.fileWrite_Tools import create_file, edit_file
 from core.agent.tool_executor import executeTool
 
 from core.llm import llm
@@ -18,6 +19,8 @@ tools = [
     project_tree,
     find_file,
     file_info,
+    create_file,
+    edit_file
 ]
 llm_with_tools = llm.bind_tools(tools)
 

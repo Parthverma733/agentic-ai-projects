@@ -6,6 +6,7 @@ from core.tools.filesReadOnly_Tools import (
     find_file,
     file_info,
 )
+from core.tools.fileWrite_Tools import create_file, edit_file
 
 tools = {
     "list_files": list_files,
@@ -14,6 +15,8 @@ tools = {
     "project_tree": project_tree,
     "find_file": find_file,
     "file_info": file_info,
+    "create_file":create_file,
+    "edit_file":edit_file
 }
 
 
