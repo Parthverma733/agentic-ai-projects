@@ -138,3 +138,47 @@ def create_directory(path: str) -> str:
 
     except Exception as e:
         return f"Error creating directory: {str(e)}"
+
+
+@tool
+def rename_file(path: str, new_path: str) -> str:
+    """
+    Rename or move an existing file inside the project directory.
+
+    Both the source and destination must remain inside the project directory.
+    The destination must not already exist.
+    """
+
+    if not path:
+        return "Error: Source path cannot be empty."
+
+    if not new_path:
+        return "Error: Destination path cannot be empty."
+
+    try:
+        source = safe_path(path)
+        destination = safe_path(new_path)
+
+        if not source.exists():
+            return f"Error: File '{path}' does not exist."
+
+        if not source.is_file():
+            return f"Error: '{path}' is not a file."
+
+        if destination.exists():
+            return f"Error: File or directory '{new_path}' already exists."
+
+        destination.parent.mkdir(parents=True, exist_ok=True)
+
+        source.rename(destination)
+
+        return f"File renamed successfully: {source} → {destination}"
+
+    except ValueError as e:
+        return f"Error: {str(e)}"
+
+    except PermissionError:
+        return f"Error: Permission denied when renaming '{path}'."
+
+    except Exception as e:
+        return f"Error renaming file: {str(e)}"
