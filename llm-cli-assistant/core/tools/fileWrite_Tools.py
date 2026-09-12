@@ -108,3 +108,33 @@ def edit_file(path: str, old_text: str, new_text: str) -> str:
 
     except Exception as e:
         return f"Error editing file: {str(e)}"
+
+@tool
+def create_directory(path: str) -> str:
+    """
+    Create a new directory inside the project directory.
+
+    Parent directories are created automatically if needed.
+    """
+
+    if not path:
+        return "Error: Directory path cannot be empty."
+
+    try:
+        target = safe_path(path)
+
+        if target.exists():
+            return f"Error: File or directory '{path}' already exists."
+
+        target.mkdir(parents=True, exist_ok=False)
+
+        return f"Directory created successfully: {target}"
+
+    except ValueError as e:
+        return f"Error: {str(e)}"
+
+    except PermissionError:
+        return f"Error: Permission denied when creating '{path}'."
+
+    except Exception as e:
+        return f"Error creating directory: {str(e)}"
