@@ -257,3 +257,49 @@ def delete_file(path: str) -> str:
 
     except Exception as e:
         return f"Error deleting file: {str(e)}"
+
+
+
+@tool
+def delete_directory(path: str) -> str:
+    """
+    Delete an empty directory inside the project directory.
+
+    Use this tool only when the user explicitly asks to delete a directory.
+
+    The directory must exist, must be inside the project directory,
+    and must be empty.
+
+    Non-empty directories are not deleted by this tool.
+    """
+
+    if not path:
+        return "Error: Directory path cannot be empty."
+
+    try:
+        target = safe_path(path)
+
+        if not target.exists():
+            return f"Error: Directory '{path}' does not exist."
+
+        if not target.is_dir():
+            return f"Error: '{path}' is not a directory."
+
+        target.rmdir()
+
+        return f"Directory deleted successfully: {target}"
+
+    except ValueError as e:
+        return f"Error: {str(e)}"
+
+    except OSError:
+        return (
+            f"Error: Directory '{path}' is not empty "
+            "or could not be deleted."
+        )
+
+    except PermissionError:
+        return f"Error: Permission denied when deleting '{path}'."
+
+    except Exception as e:
+        return f"Error deleting directory: {str(e)}"
