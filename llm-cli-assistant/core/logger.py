@@ -2,7 +2,6 @@ import logging
 import os
 from logging.handlers import RotatingFileHandler
 
-
 LOG_DIR = "logs"
 LOG_FILE = os.path.join(LOG_DIR, "agent.log")
 
@@ -12,7 +11,6 @@ def setup_logger():
 
     logger = logging.getLogger("developer_agent")
 
-    # Prevent duplicate handlers if setup_logger() is called again.
     if logger.handlers:
         return logger
 
@@ -23,7 +21,6 @@ def setup_logger():
         datefmt="%Y-%m-%d %H:%M:%S"
     )
 
-    # File handler
     file_handler = RotatingFileHandler(
         LOG_FILE,
         maxBytes=5 * 1024 * 1024,
@@ -34,13 +31,7 @@ def setup_logger():
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(formatter)
 
-    # Console handler
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.INFO)
-    console_handler.setFormatter(formatter)
-
     logger.addHandler(file_handler)
-    logger.addHandler(console_handler)
 
     return logger
 

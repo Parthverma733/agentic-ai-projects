@@ -24,6 +24,39 @@ tools = {
 }
 
 
+from core.logger import logger
+
+
 def executeTool(tool_call):
-    tool = tools[tool_call["name"]]
-    return tool.invoke(tool_call)
+
+    tool_name = tool_call["name"]
+
+    logger.info(
+        f"Tool call started | tool={tool_name}"
+    )
+
+    tool = tools.get(tool_name)
+
+    if tool is None:
+        logger.error(
+            f"Unknown tool requested | tool={tool_name}"
+        )
+
+        return f"Error: Unknown tool '{tool_name}'."
+
+    try:
+        result = tool.invoke(tool_call)
+
+        logger.info(
+            f"Tool call completed | tool={tool_name}"
+        )
+
+        return result
+
+    except Exception as e:
+
+        logger.exception(
+            f"Tool call failed | tool={tool_name} | error={e}"
+        )
+
+        raise
