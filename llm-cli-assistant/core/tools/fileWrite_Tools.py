@@ -114,7 +114,20 @@ def create_directory(path: str) -> str:
     """
     Create a new directory inside the project directory.
 
-    Parent directories are created automatically if needed.
+    Use this tool when the user explicitly asks to create a folder
+    or directory.
+
+    The directory path must remain inside the project directory.
+    Parent directories are created automatically if they do not exist.
+
+    This tool should not be used to create files.
+
+    Args:
+        path: Path of the directory to create.
+
+    Returns:
+        A success message if the directory was created, or an error
+        message if the operation failed.
     """
 
     if not path:
@@ -143,11 +156,27 @@ def create_directory(path: str) -> str:
 @tool
 def rename_file(path: str, new_path: str) -> str:
     """
-    Rename or move an existing file inside the project directory.
+    Rename or move an existing file within the project directory.
 
-    Both the source and destination must remain inside the project directory.
-    The destination must not already exist.
-    """
+    Use this tool when the user explicitly asks to rename a file
+    or move a file to another location inside the project.
+
+    Both the source and destination paths must remain inside the
+    project directory.
+
+    The destination must not already exist. Parent directories of
+    the destination are created automatically if necessary.
+
+    This tool should not be used to modify the contents of a file.
+
+    Args:
+        path: Current path of the file.
+        new_path: New path for the file.
+
+    Returns:
+        A success message if the file was renamed or moved, or an
+        error message if the operation failed.
+    """ 
 
     if not path:
         return "Error: Source path cannot be empty."
@@ -182,3 +211,49 @@ def rename_file(path: str, new_path: str) -> str:
 
     except Exception as e:
         return f"Error renaming file: {str(e)}"
+
+
+@tool
+def delete_file(path: str) -> str:
+    """
+    Delete an existing file inside the project directory.
+
+    Use this tool only when the user explicitly asks to delete a file.
+
+    The file must exist and must be located inside the project directory.
+    Directories cannot be deleted by this tool.
+
+    This operation is destructive and cannot be undone automatically.
+
+    Args:
+        path: Path of the file to delete.
+
+    Returns:
+        A success message if the file was deleted, or an error message
+        if the operation failed.
+    """
+
+    if not path:
+        return "Error: File path cannot be empty."
+
+    try:
+        target = safe_path(path)
+
+        if not target.exists():
+            return f"Error: File '{path}' does not exist."
+
+        if not target.is_file():
+            return f"Error: '{path}' is not a file."
+
+        target.unlink()
+
+        return f"File deleted successfully: {target}"
+
+    except ValueError as e:
+        return f"Error: {str(e)}"
+
+    except PermissionError:
+        return f"Error: Permission denied when deleting '{path}'."
+
+    except Exception as e:
+        return f"Error deleting file: {str(e)}"

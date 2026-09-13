@@ -6,11 +6,17 @@ from core.tools.filesReadOnly_Tools import (
     find_file,
     file_info,
 )
-from core.tools.fileWrite_Tools import create_file, edit_file, create_directory, rename_file
-from core.agent.tool_executor import executeTool
+from core.tools.fileWrite_Tools import (
+    create_file,
+    edit_file, 
+    create_directory, 
+    rename_file, 
+    delete_file
+)
 
 from core.llm import llm
 from core.agent.context_manager import get_context
+from core.agent.tool_executor import executeTool
 
 tools = [
     list_files,
@@ -22,8 +28,10 @@ tools = [
     create_file,
     edit_file,
     create_directory,
-    rename_file
+    rename_file,
+    delete_file
 ]
+
 llm_with_tools = llm.bind_tools(tools)
 
 def run_agent(messages):
