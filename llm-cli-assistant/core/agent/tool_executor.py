@@ -6,7 +6,15 @@ from core.tools.filesReadOnly_Tools import (
     find_file,
     file_info,
 )
-from core.tools.fileWrite_Tools import create_file, edit_file, create_directory, rename_file, delete_file, delete_directory
+from core.tools.fileWrite_Tools import (
+    create_file, 
+    edit_file, 
+    create_directory, 
+    rename_file, 
+    delete_file, 
+    delete_directory,
+    apply_patch
+)
 
 tools = {
     "list_files": list_files,
@@ -20,7 +28,8 @@ tools = {
     "create_directory":create_directory,
     "rename_file":rename_file,
     "delete_file":delete_file,
-    "delete_directory":delete_directory
+    "delete_directory":delete_directory,
+    "apply_patch":apply_patch
 }
 
 

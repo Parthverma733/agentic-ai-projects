@@ -303,3 +303,124 @@ def delete_directory(path: str) -> str:
 
     except Exception as e:
         return f"Error deleting directory: {str(e)}"
+
+@tool
+def apply_patch(path: str, patch: str) -> str:
+    """
+    Apply a unified diff patch to an existing file.
+
+    The file must exist inside the project directory.
+    The patch is validated before the modified content is written.
+    """
+
+    if not path:
+        return "Error: File path cannot be empty."
+
+    if not patch:
+        return "Error: Patch cannot be empty."
+
+    try:
+        target = safe_path(path)
+
+        if not target.exists():
+            return f"Error: File '{path}' does not exist."
+
+        if not target.is_file():
+            return f"Error: '{path}' is not a file."
+
+        with open(target, "r", encoding="utf-8") as file:
+            original_content = file.read()
+
+        original_lines = original_content.splitlines(keepends=True)
+        patch_lines = patch.splitlines()
+
+        if len(patch_lines) < 3:
+            return "Error: Invalid patch."
+
+        # Remove optional file headers.
+        patch_body = []
+
+        for line in patch_lines:
+            if line.startswith("--- ") or line.startswith("+++ "):
+                continue
+
+            patch_body.append(line)
+
+        modified_lines = original_lines.copy()
+
+        # Process hunks from bottom to top so line positions
+        # remain valid while applying changes.
+        hunks = []
+        current_hunk = []
+
+        for line in patch_body:
+            if line.startswith("@@"):
+                if current_hunk:
+                    hunks.append(current_hunk)
+
+                current_hunk = [line]
+
+            elif current_hunk:
+                current_hunk.append(line)
+
+        if current_hunk:
+            hunks.append(current_hunk)
+
+        if not hunks:
+            return "Error: No valid patch hunks found."
+
+        for hunk in reversed(hunks):
+            header = hunk[0]
+
+            try:
+                old_start = int(header.split("-")[1].split(",")[0])
+            except (IndexError, ValueError):
+                return f"Error: Invalid hunk header: {header}"
+
+            index = old_start - 1
+
+            expected = []
+            additions = []
+
+            for line in hunk[1:]:
+                if line.startswith(" "):
+                    expected.append(line[1:])
+                    additions.append(line[1:])
+
+                elif line.startswith("-"):
+                    expected.append(line[1:])
+
+                elif line.startswith("+"):
+                    additions.append(line[1:])
+
+                elif line == r"\ No newline at end of file":
+                    continue
+
+                else:
+                    return f"Error: Invalid patch line: {line}"
+
+            actual = modified_lines[index:index + len(expected)]
+
+            if actual != expected:
+                return (
+                    f"Error: Patch does not match current contents "
+                    f"of '{path}'."
+                )
+
+            modified_lines[index:index + len(expected)] = additions
+
+        updated_content = "".join(modified_lines)
+
+        with open(target, "w", encoding="utf-8") as file:
+            file.write(updated_content)
+
+        return f"Patch applied successfully: {target}"
+
+    except ValueError as e:
+        return f"Error: {str(e)}"
+
+    except PermissionError:
+        return f"Error: Permission denied when patching '{path}'."
+
+    except Exception as e:
+        return f"Error applying patch: {str(e)}"

@@ -12,7 +12,8 @@ from core.tools.fileWrite_Tools import (
     create_directory, 
     rename_file, 
     delete_file,
-    delete_directory
+    delete_directory,
+    apply_patch
 )
 
 from core.llm import llm
@@ -31,7 +32,8 @@ tools = [
     create_directory,
     rename_file,
     delete_file,
-    delete_directory
+    delete_directory,
+    apply_patch
 ]
 
 llm_with_tools = llm.bind_tools(tools)
